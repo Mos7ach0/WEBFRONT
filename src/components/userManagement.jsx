@@ -1,34 +1,70 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { getUsers, createUser, updateUser, deleteUser } from '../services/userService.js';
 
 const UserManagement = () => {
   const [users, setUsers] = useState([]);
-  const [form, setForm] = useState({ name: '', email: '', password: '' });
-  const [editingIndex, setEditingIndex] = useState(null);
+  const [form, setForm] = useState({ id: null, name: '', email: '', password: '' });
+  const [editingId, setEditingId] = useState(null);
+
+  useEffect(() => {
+    loadUsers();
+  }, []);
+
+  const loadUsers = async () => {
+    const res = await getUsers();
+    if (res.success) {
+      setUsers(res.users);
+    } else {
+      alert(res.message);
+    }
+  };
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  const handleAddOrUpdate = () => {
-    if (editingIndex !== null) {
-      const updated = [...users];
-      updated[editingIndex] = form;
-      setUsers(updated);
-      setEditingIndex(null);
+  const handleAddOrUpdate = async () => {
+    const { id, name, email, password } = form;
+
+    if (!name || !email || !password) return alert("Completa todos los campos");
+
+    if (editingId) {
+      const res = await updateUser(editingId, name, email, password);
+      if (res.success) {
+        await loadUsers();
+        resetForm();
+      } else {
+        alert(res.message);
+      }
     } else {
-      setUsers([...users, form]);
+      const res = await createUser(name, email, password);
+      if (res.success) {
+        await loadUsers();
+        resetForm();
+      } else {
+        alert(res.message);
+      }
     }
-    setForm({ name: '', email: '', password: '' });
   };
 
-  const handleEdit = (index) => {
-    setForm(users[index]);
-    setEditingIndex(index);
+  const handleEdit = (user) => {
+    setForm({ ...user });
+    setEditingId(user.id);
   };
 
-  const handleDelete = (index) => {
-    const filtered = users.filter((_, i) => i !== index);
-    setUsers(filtered);
+  const handleDelete = async (id) => {
+    if (!window.confirm("¿Eliminar este usuario?")) return;
+    const res = await deleteUser(id);
+    if (res.success) {
+      await loadUsers();
+    } else {
+      alert(res.message);
+    }
+  };
+
+  const resetForm = () => {
+    setForm({ id: null, name: '', email: '', password: '' });
+    setEditingId(null);
   };
 
   return (
@@ -36,32 +72,57 @@ const UserManagement = () => {
       <h2 style={styles.title}>Gestión de Usuarios</h2>
 
       <div style={styles.form}>
-        <input type="text" name="name" placeholder="Nombre" value={form.name} onChange={handleChange} style={styles.input} />
-        <input type="email" name="email" placeholder="Correo" value={form.email} onChange={handleChange} style={styles.input} />
-        <input type="password" name="password" placeholder="Contraseña" value={form.password} onChange={handleChange} style={styles.input} />
+        <input
+          type="text"
+          name="name"
+          placeholder="Nombre"
+          value={form.name}
+          onChange={handleChange}
+          style={styles.input}
+        />
+        <input
+          type="email"
+          name="email"
+          placeholder="Correo"
+          value={form.email}
+          onChange={handleChange}
+          style={styles.input}
+        />
+        <input
+          type="password"
+          name="password"
+          placeholder="Contraseña"
+          value={form.password}
+          onChange={handleChange}
+          style={styles.input}
+        />
         <button onClick={handleAddOrUpdate} style={styles.addButton}>
-          {editingIndex !== null ? 'Actualizar' : 'Agregar'}
+          {editingId ? 'Actualizar' : 'Agregar'}
         </button>
       </div>
 
       <table style={styles.table}>
         <thead>
           <tr>
-            <th>Nombre</th>
             <th>Correo</th>
+            <th>Nombre</th>
             <th>Contraseña</th>
             <th>Acciones</th>
           </tr>
         </thead>
         <tbody>
-          {users.map((u, i) => (
-            <tr key={i}>
-              <td>{u.name}</td>
+          {users.map((u) => (
+            <tr key={u.id}>
               <td>{u.email}</td>
+              <td>{u.name}</td>
               <td>{u.password}</td>
               <td>
-                <button onClick={() => handleEdit(i)} style={styles.actionBtn}>Editar</button>
-                <button onClick={() => handleDelete(i)} style={styles.deleteBtn}>Borrar</button>
+                <button onClick={() => handleEdit(u)} style={styles.actionBtn}>
+                  Editar
+                </button>
+                <button onClick={() => handleDelete(u.id)} style={styles.deleteBtn}>
+                  Borrar
+                </button>
               </td>
             </tr>
           ))}
@@ -116,13 +177,6 @@ const styles = {
     padding: '5px 10px',
     color: 'white',
     cursor: 'pointer',
-  },
-  th: {
-    backgroundColor: '#eee',
-    padding: 10,
-  },
-  td: {
-    padding: 10,
   },
 };
 

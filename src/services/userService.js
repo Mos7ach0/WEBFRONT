@@ -1,45 +1,52 @@
-// userService.js
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
+// services/userService.js
 
 export const getUsers = async () => {
-  const res = await fetch('http://localhost:3000/api/usuarios');
-  if (!res.ok) throw new Error('Error al obtener usuarios');
-  
+  const res = await fetch("http://localhost:3000/api/usuarios");
+
+  if (!res.ok) {
+    throw new Error("Error al obtener usuarios");
+  }
+
   const data = await res.json();
-  console.log('Datos recibidos:', data); // <-- Agrega esto
-
   return data;
 };
 
-
-
-export const createUser = async (user) => {
-  const response = await fetch(`${API_URL}/usuarios`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(user),
+export const createUser = async (userData) => {
+  const res = await fetch("http://localhost:3000/api/usuarios", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(userData),
   });
-  const data = await response.json();
-  if (!response.ok) throw new Error(data.message || 'Error al crear usuario');
-  return data;
+
+  if (!res.ok) {
+    throw new Error("Error al crear usuario");
+  }
+
+  return await res.json();
 };
 
-export const updateUser = async (id, user) => {
-  const response = await fetch(`${API_URL}/usuarios/${id}`, {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(user),
+export const updateUser = async (id, userData) => {
+  const res = await fetch(`http://localhost:3000/api/usuarios/${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(userData),
   });
-  const data = await response.json();
-  if (!response.ok) throw new Error(data.message || 'Error al actualizar usuario');
-  return data;
+
+  if (!res.ok) {
+    throw new Error("Error al actualizar usuario");
+  }
+
+  return await res.json();
 };
 
 export const deleteUser = async (id) => {
-  const response = await fetch(`${API_URL}/usuarios/${id}`, {
-    method: 'DELETE',
+  const res = await fetch(`http://localhost:3000/api/usuarios/${id}`, {
+    method: "DELETE",
   });
-  const data = await response.json();
-  if (!response.ok) throw new Error(data.message || 'Error al eliminar usuario');
-  return data;
+
+  if (!res.ok) {
+    throw new Error("Error al eliminar usuario");
+  }
+
+  return await res.json();
 };

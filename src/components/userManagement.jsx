@@ -1,183 +1,132 @@
-import React, { useState, useEffect } from 'react';
-import { getUsers, createUser, updateUser, deleteUser } from '../services/userService.js';
+import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { getUsers, createUser, updateUser, deleteUser } from "../services/userService";
 
 const UserManagement = () => {
   const [users, setUsers] = useState([]);
-  const [form, setForm] = useState({ id: null, name: '', email: '', password: '' });
+  const [form, setForm] = useState({ name: "", email: "", password: "" });
   const [editingId, setEditingId] = useState(null);
+  const navigate = useNavigate();
+
+  const loadUsers = async () => {
+    try {
+      const data = await getUsers();
+      setUsers(data);
+    } catch (err) {
+      console.error("Error al cargar usuarios", err);
+    }
+  };
 
   useEffect(() => {
     loadUsers();
   }, []);
 
-  const loadUsers = async () => {
-    const res = await getUsers();
-    if (res.success) {
-      setUsers(res.users);
-    } else {
-      alert(res.message);
-    }
-  };
-
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  const handleAddOrUpdate = async () => {
-    const { id, name, email, password } = form;
+  const handleSubmit = async (e) => {
+    e.preventDefault();
 
-    if (!name || !email || !password) return alert("Completa todos los campos");
+    try {
+      if (editingId) {
+        await updateUser(editingId, form);
+      } else {
+        await createUser(form);
+      }
 
-    if (editingId) {
-      const res = await updateUser(editingId, name, email, password);
-      if (res.success) {
-        await loadUsers();
-        resetForm();
-      } else {
-        alert(res.message);
-      }
-    } else {
-      const res = await createUser(name, email, password);
-      if (res.success) {
-        await loadUsers();
-        resetForm();
-      } else {
-        alert(res.message);
-      }
+      setForm({ name: "", email: "", password: "" });
+      setEditingId(null);
+      loadUsers();
+    } catch (err) {
+      console.error("Error al guardar usuario", err);
     }
   };
 
   const handleEdit = (user) => {
-    setForm({ ...user });
+    setForm({ name: user.name, email: user.email, password: "" });
     setEditingId(user.id);
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm("¿Eliminar este usuario?")) return;
-    const res = await deleteUser(id);
-    if (res.success) {
-      await loadUsers();
-    } else {
-      alert(res.message);
+    try {
+      await deleteUser(id);
+      loadUsers();
+    } catch (err) {
+      console.error("Error al eliminar usuario", err);
     }
   };
 
-  const resetForm = () => {
-    setForm({ id: null, name: '', email: '', password: '' });
-    setEditingId(null);
-  };
-
   return (
-    <div style={styles.container}>
-      <h2 style={styles.title}>Gestión de Usuarios</h2>
+    <div style={{ padding: "1rem" }}>
+      <button 
+        onClick={() => navigate("/profile")} 
+        style={{ marginBottom: "1rem", padding: "0.5rem 1rem", cursor: "pointer" }}
+      >
+        Volver al Perfil
+      </button>
 
-      <div style={styles.form}>
+      <h2>Gestión de Usuarios</h2>
+
+      <form onSubmit={handleSubmit} style={{ marginBottom: "1rem" }}>
         <input
-          type="text"
           name="name"
           placeholder="Nombre"
           value={form.name}
           onChange={handleChange}
-          style={styles.input}
+          required
         />
         <input
-          type="email"
           name="email"
           placeholder="Correo"
           value={form.email}
           onChange={handleChange}
-          style={styles.input}
+          required
         />
         <input
-          type="password"
           name="password"
+          type="password"
           placeholder="Contraseña"
           value={form.password}
           onChange={handleChange}
-          style={styles.input}
+          required
         />
-        <button onClick={handleAddOrUpdate} style={styles.addButton}>
-          {editingId ? 'Actualizar' : 'Agregar'}
+        <button type="submit">
+          {editingId ? "Actualizar" : "Agregar"} Usuario
         </button>
-      </div>
+      </form>
 
-      <table style={styles.table}>
+      <table border="1" cellPadding="8" cellSpacing="0" style={{ width: "100%" }}>
         <thead>
           <tr>
-            <th>Correo</th>
+            <th>ID</th>
             <th>Nombre</th>
-            <th>Contraseña</th>
+            <th>Correo</th>
             <th>Acciones</th>
           </tr>
         </thead>
         <tbody>
-          {users.map((u) => (
-            <tr key={u.id}>
-              <td>{u.email}</td>
-              <td>{u.name}</td>
-              <td>{u.password}</td>
-              <td>
-                <button onClick={() => handleEdit(u)} style={styles.actionBtn}>
-                  Editar
-                </button>
-                <button onClick={() => handleDelete(u.id)} style={styles.deleteBtn}>
-                  Borrar
-                </button>
-              </td>
+          {users.length === 0 ? (
+            <tr>
+              <td colSpan="4">No hay usuarios</td>
             </tr>
-          ))}
+          ) : (
+            users.map((user) => (
+              <tr key={user.id}>
+                <td>{user.id}</td>
+                <td>{user.name}</td>
+                <td>{user.email}</td>
+                <td>
+                  <button onClick={() => handleEdit(user)}>Editar</button>{" "}
+                  <button onClick={() => handleDelete(user.id)}>Eliminar</button>
+                </td>
+              </tr>
+            ))
+          )}
         </tbody>
       </table>
     </div>
   );
-};
-
-const styles = {
-  container: {
-    maxWidth: 700,
-    margin: '30px auto',
-    padding: 20,
-  },
-  title: {
-    textAlign: 'center',
-    marginBottom: 20,
-  },
-  form: {
-    display: 'flex',
-    gap: 10,
-    marginBottom: 20,
-  },
-  input: {
-    flex: 1,
-    padding: 8,
-    fontSize: 16,
-  },
-  addButton: {
-    padding: '8px 16px',
-    backgroundColor: '#28a745',
-    color: '#fff',
-    border: 'none',
-    fontSize: 16,
-    cursor: 'pointer',
-  },
-  table: {
-    width: '100%',
-    borderCollapse: 'collapse',
-  },
-  actionBtn: {
-    marginRight: 5,
-    backgroundColor: '#ffc107',
-    border: 'none',
-    padding: '5px 10px',
-    cursor: 'pointer',
-  },
-  deleteBtn: {
-    backgroundColor: '#dc3545',
-    border: 'none',
-    padding: '5px 10px',
-    color: 'white',
-    cursor: 'pointer',
-  },
 };
 
 export default UserManagement;

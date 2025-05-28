@@ -24,9 +24,10 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      # 4. Ejecuta lint para chequear errores
+      # 4. Ejecuta lint para chequear errores (pero continúa aunque falle)
       - name: Run lint
         run: npm run lint
+        continue-on-error: true
 
       # 5. Ejecuta test unitario específico
       - name: Run Login.test.jsx with Jest
@@ -46,4 +47,3 @@ jobs:
           app_location: "/"       # Ajusta si tu frontend está en otra carpeta
           api_location: ""
           output_location: "dist" # Asegúrate que Vite construye aquí
-

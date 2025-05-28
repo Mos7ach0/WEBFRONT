@@ -18,7 +18,7 @@ const Login = () => {
 
   return (
     <div style={styles.container}>
-      <form style={styles.form} onSubmit={handleSubmit}>
+      <form role="form" style={styles.form} onSubmit={handleSubmit}>
         <h2 style={styles.title}>Inicio de Sesión</h2>
         <input
           type="email"
@@ -26,7 +26,7 @@ const Login = () => {
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           style={styles.input}
-          required
+          // removed required
         />
         <input
           type="password"
@@ -34,7 +34,7 @@ const Login = () => {
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           style={styles.input}
-          required
+          // removed required
         />
         <button type="submit" style={styles.button}>Entrar</button>
       </form>
